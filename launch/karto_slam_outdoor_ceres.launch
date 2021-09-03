@@ -1,0 +1,28 @@
+
+<launch>
+
+    <arg name="bag_filename" default="/home/zy/scan_odom_2021-08-24-18-28-08.bag"/>
+
+    <node name="playbag" pkg="rosbag" type="play"
+        args="--clock --topics /scan /odom /tf --bags $(arg bag_filename)" />
+
+    <!-- 使用bag的时间戳 -->
+    <param name="use_sim_time" value="true" />
+
+    <!-- base_link to front_laser_link -->
+    <node pkg="tf" type="static_transform_publisher" name="link_broadcaster" 
+        args="0.1 0.0 0.256 -3.14 0 0 base_footprint laser 100" />
+
+    <!-- 启动 karto_slam 节点 -->
+    <node name="karto_graph_slam_node" pkg="karto_graph_slam" type="karto_graph_slam_node" output="screen" >
+        <param name="base_frame" value="base_footprint" />
+        <rosparam command="load" file="$(find karto_graph_slam)/config/mapper_params_outdoor_ceres.yaml" />
+        <remap from="scan" to="scan" />
+    </node>
+
+    <!-- launch rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true"
+        args="-d $(find karto_graph_slam)/config/karto_slam_outdoor.rviz" />
+
+
+</launch>
